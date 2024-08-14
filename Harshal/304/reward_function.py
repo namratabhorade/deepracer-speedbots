@@ -23,7 +23,7 @@ def get_speed_from_angle(angle, min_speed):
 
 
 # get curve from future track length
-def get_curve_from_length(params, future_track_length):
+def get_curve_from_length(params, future_track_length, return_abs):
     waypoints = params['waypoints']
     closest_waypoints = params['closest_waypoints']
     upcoming_curve_angle = 0
@@ -36,9 +36,14 @@ def get_curve_from_length(params, future_track_length):
             math.degrees(math.atan2(future_point[1] - current_point[1], future_point[0] - current_point[0])), 0)
         current_direction = round(
             math.degrees(math.atan2(current_point[1] - prev_point[1], current_point[0] - prev_point[0])), 0)
-        upcoming_curve_angle = abs(future_direction - current_direction)
+        upcoming_curve_angle = (future_direction - current_direction)
+        sign = 1
+        if upcoming_curve_angle != 0:
+            sign = upcoming_curve_angle / abs(upcoming_curve_angle)
         if upcoming_curve_angle > 180:
             upcoming_curve_angle = 360 - upcoming_curve_angle
+        if return_abs:
+            upcoming_curve_angle *= sign
     return upcoming_curve_angle
 
 
@@ -67,11 +72,12 @@ def get_avg_curve_from_length(params, future_track_length):
     for x in range(future_track_length):
         num = x + 1
         if len(waypoints) > closest_waypoints[1] + num:
-            avg_angle += abs(get_curve_from_length(params, num))
+            avg_angle += (get_curve_from_length(params, num, True))
             print(num, "- avg_angle:", avg_angle)
-            avg_angle = round(avg_angle / max(num, 1), 0)
-            print("avg_angle:", avg_angle)
-    return min(avg_angle, 30)
+    avg_angle = abs(round(avg_angle / max(num, 1), 0))
+    avg_angle = min(avg_angle, 30)
+    print("avg_angle:", avg_angle)
+    return avg_angle
 
 
 ps = PreviousState()

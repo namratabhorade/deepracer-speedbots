@@ -60,13 +60,18 @@ def get_direction_diff_angle(params):
 # Average of upcoming angles based on length
 def get_avg_curve_from_length(params, future_track_length):
     waypoints = params['waypoints']
+    heading = round(params['heading'], 0)
     closest_waypoints = params['closest_waypoints']
     avg_angle = 0
+    num = 0
     for x in range(future_track_length):
-        if len(waypoints) > closest_waypoints[1] + future_track_length and x + 1 > 0:
-            avg_angle = (avg_angle + get_curve_from_length(params, x + 1)) / x + 1
-            print(x + 1, ",avg_angle:", avg_angle)
-    return avg_angle
+        num = x + 1
+        if len(waypoints) > closest_waypoints[1] + num:
+            avg_angle += abs(get_curve_from_length(params, num))
+            print(num, "- avg_angle:", avg_angle)
+            avg_angle = round(avg_angle / max(num, 1), 0)
+            print("avg_angle:", avg_angle)
+    return min(avg_angle, 30)
 
 
 ps = PreviousState()
@@ -94,7 +99,7 @@ def reward_function(params):
 
     # Determine curve & direction
     upcoming_curve_angle = get_avg_curve_from_length(params, future_track_length)
-    is_track_straight = (upcoming_curve_angle == 0)
+    is_track_straight = (upcoming_curve_angle <= 10)
     direction_diff_angle = get_direction_diff_angle(params)
     expected_curve_speed = get_speed_from_angle(upcoming_curve_angle, min_speed)
 
@@ -110,7 +115,7 @@ def reward_function(params):
     print("expected_curve_speed:", expected_curve_speed)
     print("near_center_per:", near_center_per)
     print("direction_diff_angle:", direction_diff_angle)
-    print("ps.is_unwanted_steering:", ps.is_unwanted_steering(steering_angle))
+    print("ps.is_unwanted_steering:", ps.is_unwanted_steering(params))
     print("[steering_angle, speed]: [", steering_angle, ",", speed, "]")
 
     reward = 1e-5
@@ -142,7 +147,7 @@ def reward_function(params):
         print("2a) reward:", reward)
 
     # Penalize unwanted steering
-    if ps.is_unwanted_steering(steering_angle):
+    if ps.is_unwanted_steering(params):
         reward *= 0.5
         reward = round(reward, 2)
         print("3a) reward:", reward)

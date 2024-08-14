@@ -63,7 +63,7 @@ def get_avg_curve_from_length(params, future_track_length):
     closest_waypoints = params['closest_waypoints']
     avg_angle = 0
     for x in range(future_track_length):
-        if len(waypoints) > closest_waypoints[1] + future_track_length:
+        if len(waypoints) > closest_waypoints[1] + future_track_length and x + 1 > 0:
             avg_angle = (avg_angle + get_curve_from_length(params, x + 1)) / x + 1
             print(x + 1, ",avg_angle:", avg_angle)
     return avg_angle

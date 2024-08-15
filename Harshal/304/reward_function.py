@@ -42,13 +42,17 @@ def reward_function(params):
     # Near Center in Percentage, value (0 - 100)
     near_center_per = round(((track_width / 2) - distance_from_center) * 100 / (track_width / 2), 0)
 
-    progress_to_steps_ratio = round(progress / max(steps, 1), 2)
+    # Higher = better
+    progress_to_steps_ratio = round(2 * progress / max(steps, 1), 2)
 
     # Determine curve & direction
     upcoming_curve_direction = ''
+    current_direction = 0
+    future_direction = 0
+    next_point = waypoints[closest_waypoints[1]]
+    prev_point = waypoints[closest_waypoints[0]]
     future_track_length = 5
     if len(waypoints) > closest_waypoints[1] + future_track_length:
-        prev_point = waypoints[closest_waypoints[0]]
         future_point = waypoints[closest_waypoints[1] + future_track_length]
         current_point = waypoints[closest_waypoints[1]]
         future_direction = round(
@@ -61,12 +65,10 @@ def reward_function(params):
             upcoming_curve_angle = 360 - upcoming_curve_angle
     else:
         upcoming_curve_angle = 0
-    is_track_straight = (upcoming_curve_angle == 0)
+    is_track_straight = (upcoming_curve_angle <= 15)
     if is_track_straight:
         upcoming_curve_direction = ''
 
-    next_point = waypoints[closest_waypoints[1]]
-    prev_point = waypoints[closest_waypoints[0]]
     track_direction = math.atan2(next_point[1] - prev_point[1], next_point[0] - prev_point[0])
     track_direction = round(math.degrees(track_direction), 0)
     direction_diff_angle = abs(track_direction - heading)
@@ -76,7 +78,6 @@ def reward_function(params):
     expected_curve_speed = get_speed_from_angle(upcoming_curve_angle)
 
     print("------------------------------------------------------------------")
-    print("progress_to_steps_ratio: ", progress_to_steps_ratio)
     print("steps: ", steps)
     print("progress: ", progress)
     print("speed: ", speed)
@@ -99,48 +100,58 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    reward = (speed ** 2)
-
-    # Penalize if not driving in track direction
-    if direction_diff_angle > 45:
-        reward *= (100 - direction_diff_angle) / 100
-        reward = round(reward, 2)
-        print("1a) reward: ", reward)
+    reward = 5
+    reward = round(reward, 2)
+    print("Initial reward: ", reward)
 
     # Reward for being on correct side of road before curve
     if (upcoming_curve_direction == 'left' and not is_left_of_center) or (
             upcoming_curve_direction == 'right' and is_left_of_center):
         reward += 1
         reward = round(reward, 2)
-        print("2a) reward: ", reward)
+        print("1a) reward: ", reward)
 
-    # Reward driving in straight direction
-    if direction_diff_angle == 0:
-        reward *= (1.2 + near_center_per / 100)
+    if direction_diff_angle < 30:
+        reward += speed / 2
         reward = round(reward, 2)
-        print("3a) reward: ", reward)
+        print("2a) reward: ", reward)
+    # Penalize if not driving in track direction
+    elif direction_diff_angle > 50:
+        reward *= (100 - direction_diff_angle) / 100
+        reward = round(reward, 2)
+        print("2b) reward: ", reward)
+    else:
+        reward -= speed
+        reward = round(reward, 2)
+        print("2c) reward: ", reward)
 
     # Reward zero steering on straight tracks
     if is_track_straight and (steering_angle == ps.steering_angle == 0):
         reward += 3
         reward = round(reward, 2)
+        print("3a) reward: ", reward)
+
+    # Penalize hard turns
+    if ps.steering_angle > -1 and abs(ps.steering_angle - steering_angle) > 10:
+        reward *= 0.5
+        reward = round(reward, 2)
         print("4a) reward: ", reward)
+
+    # Reward track completion
+    if progress < 100:
+        reward += progress / 20
+        reward = round(reward, 2)
+        print("5a) reward: ", reward)
+    else:
+        reward += progress * 1.5
+        reward = round(reward, 2)
+        print("5b) reward: ", reward)
 
     # Reward/penalize according to progress to steps ratio
     if progress_to_steps_ratio > 0:
         reward *= progress_to_steps_ratio
         reward = round(reward, 2)
-        print("5a) reward: ", reward)
-
-    # Reward track completion
-    if progress < 100:
-        reward += progress / 10
-        reward = round(reward, 2)
         print("6a) reward: ", reward)
-    else:
-        reward += progress * 2
-        reward = round(reward, 2)
-        print("6b) reward: ", reward)
 
     reward = round(max(reward, 0.01), 2)
     print("--------------------")

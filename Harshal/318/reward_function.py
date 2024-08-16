@@ -144,7 +144,7 @@ def reward_function(params):
             reward = round(reward, 2)
             print("1a2) reward:", reward)
     else:
-        reward = (reward * 0.5) + (reward * 0.5 * near_center_per / 100)
+        reward = (reward * 0.3) + (reward * 0.7 * near_center_per / 100)
         reward = round(reward, 2)
         print("1b) reward:", reward)
 
@@ -156,7 +156,7 @@ def reward_function(params):
 
     # Penalize steering at all steps
     if steering_angle != 0:
-        reward *= (80 - abs(steering_angle)) / 80
+        reward *= (100 - abs(steering_angle)) / 100
         reward = round(abs(reward), 2)
         print("3a) reward:", reward)
 

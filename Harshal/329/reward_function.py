@@ -135,7 +135,7 @@ def reward_function(params):
 
     print("--------------------")
     reward = ((speed ** 3) + (progress ** 2) / 100) / 10
-    reward = max(round(reward, 2), 4)
+    reward = max(round(reward, 2), 1)
     print("Initial reward:", reward)
 
     if curve.is_track_straight:

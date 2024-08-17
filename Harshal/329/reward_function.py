@@ -134,7 +134,7 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    reward = ((speed ** 3) + (progress ** 2) / 100) / 10
+    reward = speed * 1.25 + progress / 20
     reward = max(round(reward, 2), 1)
     print("Initial reward:", reward)
 

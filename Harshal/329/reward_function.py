@@ -172,7 +172,7 @@ def reward_function(params):
         reward = round(reward, 2)
         print("4a) reward:", reward)
     else:
-        reward += (progress_to_steps_ratio * 10000)
+        reward += (progress_to_steps_ratio * 300)
         reward = round(reward, 2)
         print("4b) reward:", reward)
 
@@ -181,7 +181,7 @@ def reward_function(params):
 
     # Reward/penalize according to progress to steps ratio
     if progress_to_steps_ratio > 0:
-        reward *= (0.15 + progress_to_steps_ratio) ** 5
+        reward *= (0.1 + progress_to_steps_ratio) ** 5
         reward = round(reward, 2)
         print("5a) reward:", reward)
 

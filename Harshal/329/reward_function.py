@@ -134,7 +134,7 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    reward = speed * 1.25 + progress / 20
+    reward = (speed * 1.25 + progress / 20) ** 2
     reward = max(round(reward, 2), 1)
     print("Initial reward:", reward)
 
@@ -168,11 +168,11 @@ def reward_function(params):
 
     # Reward track completion
     if progress < 100:
-        reward += progress / 4
+        reward += progress / 2
         reward = round(reward, 2)
         print("4a) reward:", reward)
     else:
-        reward += (progress_to_steps_ratio * 9000)
+        reward += (progress_to_steps_ratio * 10000)
         reward = round(reward, 2)
         print("4b) reward:", reward)
 

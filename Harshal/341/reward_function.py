@@ -138,7 +138,7 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    initial_reward = (1 + (near_center_per / 100)) ** 10 * ((70 - direction_diff_angle) / 70)
+    initial_reward = 10
     initial_reward = round(max(initial_reward, 2), 2)
     print("Initial reward:", initial_reward)
 
@@ -163,7 +163,7 @@ def reward_function(params):
             print("1b1) reward:", reward)
         # Punish steering everywhere
         if steering_angle != 0:
-            reward *= (80 - abs(steering_angle)) / 80
+            reward *= (100 - abs(steering_angle)) / 100
             reward = round(abs(reward), 2)
             print("1b2) reward:", reward)
 

@@ -140,7 +140,7 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    initial_reward = 100 - (curve.upcoming_curve_angle + direction_diff_angle)
+    initial_reward = near_center_per / 10
     initial_reward = max(initial_reward, 1)
     initial_reward = round(initial_reward, 2)
     print("Initial reward:", initial_reward)
@@ -207,28 +207,45 @@ def reward_function(params):
     #     if ps.best_steps == -1 or ps.best_steps > steps:
     #         ps.best_steps = steps
 
-    if curve.is_track_straight:
-        reward *= speed ** 2
+    # Reward for being on the correct side of the curve or straight path
+    if (curve.is_track_straight and not is_left_of_center) or curve.is_correct_side_of_curve:
+        reward += (100 - near_center_per) / 20
         reward = round(abs(reward), 2)
         print("1a) reward:", reward)
-    elif curve.upcoming_curve_angle > 45:
-        reward *= 4 * progress_to_steps_ratio / speed
-        reward = round(abs(reward), 2)
-        print("1b) reward:", reward)
-    else:
-        reward = speed
-        reward = round(abs(reward), 2)
-        print("1c) reward:", reward)
 
-    if progress_to_steps_ratio > 0:
-        reward *= progress_to_steps_ratio
-        reward = round(abs(reward), 2)
-        print("2a) reward:", reward)
+    # if ps.is_unwanted_steering(params):
+    #     reward *= 0.5
+    #     reward = round(abs(reward), 2)
+    #     print("2a) reward:", reward)
+
+    # if abs(steering_angle - ps.steering_angle_1) > 15:
+    #     reward *= (50 - abs(steering_angle)) / 50
+    #     reward = round(abs(reward), 2)
+    #     print("2a) reward:", reward)
+
+    # if steering_angle != 0:
+    #     reward *= (100 - abs(steering_angle)) / 100
+    #     reward = round(abs(reward), 2)
+    #     print("2a) reward:", reward)
+
+    # if progress_to_steps_ratio > 0:
+    #     reward *= progress_to_steps_ratio + progress / 100
+    #     reward = round(abs(reward), 2)
+    #     print("5a) reward:", reward)
 
     if progress == 100:
-        reward += progress_to_steps_ratio ** 10 * 10000
+        reward += progress_to_steps_ratio ** 10 * 20000
         reward = round(abs(reward), 2)
-        print("3a) reward:", reward)
+        print("4a) reward:", reward)
+        ps.iteration += 1
+        if ps.avg_steps == -1:
+            ps.avg_steps = steps
+            ps.total_steps = steps
+        else:
+            ps.total_steps += steps
+            ps.avg_steps = round(ps.total_steps / ps.iteration, 0)
+        if ps.best_steps == -1 or ps.best_steps > steps:
+            ps.best_steps = steps
 
     reward = round(max(reward, 0.01), 2)
     print("--------------------")

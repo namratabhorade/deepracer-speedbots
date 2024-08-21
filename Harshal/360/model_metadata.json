@@ -5,7 +5,7 @@
 		{ "steering_angle": -5,  "speed": 3},
 		{ "steering_angle": 0, 	 "speed": 4},
 		{ "steering_angle": 5,   "speed": 3},
-		{ "steering_angle": 15,  "speed": 3},
+		{ "steering_angle": 15,  "speed": 2},
 		{ "steering_angle": 30,	 "speed": 1.5}
 	],
 	"sensor": ["FRONT_FACING_CAMERA"],

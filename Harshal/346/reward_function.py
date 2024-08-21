@@ -15,6 +15,7 @@ class PreviousState:
     total_steps = -1
     avg_steps = -1
     iteration = 0
+    max_progress = -1
 
     # Determine unwanted steering
     def is_unwanted_steering(self, params):
@@ -23,8 +24,7 @@ class PreviousState:
             sign_0 = steering_angle / abs(steering_angle) if steering_angle != 0 else 1.0
             sign_1 = self.steering_angle_1 / abs(self.steering_angle_1) if self.steering_angle_1 != 0 else 1.0
             sign_2 = self.steering_angle_2 / abs(self.steering_angle_2) if self.steering_angle_2 != 0 else 1.0
-            if (sign_0 != sign_1 and sign_0 == sign_2) or (
-                    steering_angle != self.steering_angle_1 and steering_angle == self.steering_angle_2):
+            if sign_0 != sign_1 and sign_0 == sign_2:
                 return True
         return False
 
@@ -104,11 +104,11 @@ def reward_function(params):
     # Near Center in Percentage, value (0 - 100)
     near_center_per = round(((track_width / 2) - distance_from_center) * 100 / (track_width / 2), 0)
 
-    # Progress to steps ratio, Higher = better
+    # Progress to steps ratio x 3, Higher = better
     progress_to_steps_ratio = round(3 * progress / max(steps, 1), 2)
 
-    track_length_to_consider = 4
     # Determine curve & direction
+    track_length_to_consider = 5
     curve = get_curve_details(params, track_length_to_consider)
     direction_diff_angle = get_direction_diff_angle(params)
     expected_curve_speed = get_speed_from_angle(curve.upcoming_curve_angle)
@@ -120,6 +120,7 @@ def reward_function(params):
     print("ps.best_steps:", ps.best_steps)
     print("ps.avg_steps:", ps.avg_steps)
     print("ps.iteration:", ps.iteration)
+    print("ps.max_progress:", ps.max_progress)
     print("near_center_per:", near_center_per)
     print("direction_diff_angle:", direction_diff_angle)
     print("curve.is_track_straight:", curve.is_track_straight)
@@ -129,6 +130,7 @@ def reward_function(params):
     print("ps.is_unwanted_steering:", ps.is_unwanted_steering(params))
     print("[steering_angle, speed]: [", steering_angle, ",", speed, "]")
     print("[speed, expected_curve_speed]: [", speed, ",", expected_curve_speed, "]")
+    print("curve.upcoming_curve_angle + direction_diff_angle:", curve.upcoming_curve_angle + direction_diff_angle)
 
     if is_reversed or direction_diff_angle > 60 or near_center_per <= 0:
         reward = 1e-5
@@ -138,52 +140,65 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    initial_reward = (round(near_center_per / 25, 0) * 25)  # * (130 - direction_diff_angle) / 100
-    initial_reward = round(initial_reward, 2)
+    initial_reward = 1
+    if near_center_per >= 80:
+        initial_reward = 10
+    elif near_center_per >= 50:
+        initial_reward = 5
+    # initial_reward = round(initial_reward, 1)
     print("Initial reward:", initial_reward)
 
     reward = initial_reward
 
-    if curve.is_track_straight:
-        # Reward zero steering on straight tracks
-        if steering_angle == ps.steering_angle_1 == 0:
-            reward *= 1.5
-            reward = round(abs(reward), 2)
-            print("1a1) reward:", reward)
-        # Punish harder if steering on straight track
-        if steering_angle != 0:
-            reward *= (50 - abs(steering_angle)) / 50
-            reward = round(abs(reward), 2)
-            print("1a2) reward:", reward)
-    else:
-        # Punish higher direction_diff_angle during strong curves
-        if curve.upcoming_curve_angle > 40 and (direction_diff_angle > 10 or speed > 2):
-            reward *= 0.5 * (70 - direction_diff_angle) / 70
-            reward = round(abs(reward), 2)
-            print("1b1) reward:", reward)
-        # Punish steering everywhere
-        if steering_angle != 0:
-            reward *= (100 - abs(steering_angle)) / 100
-            reward = round(abs(reward), 2)
-            print("1b2) reward:", reward)
-
     # Reward for being on the correct side of the curve or straight path
     if (curve.is_track_straight and not is_left_of_center) or curve.is_correct_side_of_curve:
-        reward *= 1.51 + (near_center_per / 100)
+        reward += 5 * near_center_per / 100
         reward = round(abs(reward), 2)
-        print("2a) reward:", reward)
+        print("1a) reward:", reward)
+
+    if curve.is_track_straight:
+        # Heavily Reward consistent zero steering on straight track
+        if steering_angle == ps.steering_angle_1 == ps.steering_angle_2 == 0:
+            reward += speed * 2
+            reward = round(abs(reward), 2)
+            print("2a1) reward:", reward)
+        # Reward zero steering on straight track
+        if steering_angle == 0:
+            reward += speed
+            reward = round(abs(reward), 2)
+            print("2a2) reward:", reward)
+        # Punish harder if steering on straight track
+        if steering_angle != 0:
+            reward *= (35 - abs(steering_angle)) / 35
+            reward = round(abs(reward), 2)
+            print("2a3) reward:", reward)
+    else:
+        # Punish higher direction_diff_angle on strong curves
+        if curve.upcoming_curve_angle + direction_diff_angle > 55:
+            reward *= 0.5 * (60 - direction_diff_angle) / 60
+            reward = round(abs(reward), 2)
+            print("2b1) reward:", reward)
+        # Punish higher speed on curves
+        if speed > 2:
+            reward = (reward / speed) * (80 - direction_diff_angle) / 80
+            reward = round(abs(reward), 2)
+            print("2b2) reward:", reward)
 
     # Heavily penalize unwanted steering
     if ps.is_unwanted_steering(params):
-        reward = math.sqrt(math.sqrt(reward))
+        reward = reward ** (1. / 3.)
         reward = round(abs(reward), 2)
         print("3a) reward:", reward)
 
-    # # Reward Progress
-    if progress == 100:
-        reward += progress_to_steps_ratio * 10000
+    # Reward Progress
+    if progress < 100:
+        reward += reward * progress / 100
         reward = round(abs(reward), 2)
         print("4a) reward:", reward)
+    else:
+        reward += progress_to_steps_ratio * 20000
+        reward = round(abs(reward), 2)
+        print("4b) reward:", reward)
 
         ps.iteration += 1
         if ps.avg_steps == -1:
@@ -195,11 +210,11 @@ def reward_function(params):
         if ps.best_steps == -1 or ps.best_steps > steps:
             ps.best_steps = steps
 
-    # Reward/penalize according to progress to steps ratio
-    # if progress_to_steps_ratio > 0:
-    #     reward += progress_to_steps_ratio * progress
-    #     reward = round(abs(reward), 2)
-    #     print("6a) reward:", reward)
+    # # Reward/penalize according to progress to steps ratio
+    if progress_to_steps_ratio > 0:
+        reward *= (0.1 + progress_to_steps_ratio) ** 10
+        reward = round(abs(reward), 2)
+        print("5a) reward:", reward)
 
     reward = round(max(reward, 0.01), 2)
     print("--------------------")
@@ -208,5 +223,7 @@ def reward_function(params):
 
     ps.steering_angle_2 = ps.steering_angle_1
     ps.steering_angle_1 = steering_angle
+    if ps.max_progress < progress:
+        ps.max_progress = progress
 
     return reward

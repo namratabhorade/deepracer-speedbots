@@ -203,7 +203,7 @@ def reward_function(params):
         if ps.best_steps == -1 or ps.best_steps > steps:
             ps.best_steps = steps
 
-    reward = round(max(reward, 0.01), 2)
+    reward = round(min(reward, 96000), 2)
     print("--------------------")
     print("Final reward:", reward)
     print("--------------------")

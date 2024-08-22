@@ -108,7 +108,7 @@ def reward_function(params):
     progress_to_steps_ratio = round(3 * progress / max(steps, 1), 2)
 
     # Determine curve & direction
-    track_length_to_consider = 6
+    track_length_to_consider = 5
     curve = get_curve_details(params, track_length_to_consider)
     direction_diff_angle = get_direction_diff_angle(params)
     expected_curve_speed = get_speed_from_angle(curve.upcoming_curve_angle)
@@ -132,7 +132,7 @@ def reward_function(params):
     print("[speed, expected_curve_speed]: [", speed, ",", expected_curve_speed, "]")
     print("curve.upcoming_curve_angle + direction_diff_angle:", curve.upcoming_curve_angle + direction_diff_angle)
 
-    if is_reversed or direction_diff_angle > 60 or near_center_per <= 0:
+    if is_reversed or direction_diff_angle > 80 or near_center_per <= 0:
         reward = 1e-5
         print("xxxxxxxxxxxxxxxxxxxx")
         print("Penalize, Reward:", reward)
@@ -140,12 +140,11 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    initial_reward = near_center_per / 10
-    initial_reward = max(initial_reward, 1)
+    initial_reward = speed * progress_to_steps_ratio * near_center_per / 100
     initial_reward = round(initial_reward, 2)
     print("Initial reward:", initial_reward)
 
-    reward = initial_reward
+    reward = speed * initial_reward
 
     # Reward for being on the correct side of the curve or straight path
     # if (curve.is_track_straight and not is_left_of_center) or curve.is_correct_side_of_curve:
@@ -208,10 +207,10 @@ def reward_function(params):
     #         ps.best_steps = steps
 
     # Reward for being on the correct side of the curve or straight path
-    if (curve.is_track_straight and not is_left_of_center) or curve.is_correct_side_of_curve:
-        reward += (100 - near_center_per) / 20
-        reward = round(abs(reward), 2)
-        print("1a) reward:", reward)
+    # if (curve.is_track_straight and not is_left_of_center) or curve.is_correct_side_of_curve:
+    #     reward += reward * near_center_per / 100
+    #     reward = round(abs(reward), 2)
+    #     print("1a) reward:", reward)
 
     # if ps.is_unwanted_steering(params):
     #     reward *= 0.5
@@ -229,7 +228,7 @@ def reward_function(params):
     #     print("2a) reward:", reward)
 
     # if progress_to_steps_ratio > 0:
-    #     reward *= progress_to_steps_ratio + progress / 100
+    #     reward *= (progress_to_steps_ratio ** 10)
     #     reward = round(abs(reward), 2)
     #     print("5a) reward:", reward)
 

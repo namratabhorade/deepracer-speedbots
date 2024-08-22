@@ -172,8 +172,8 @@ def reward_function(params):
             print("1b2) reward:", reward)
 
     if progress == 100:
-        reward += progress_to_steps_ratio ** 5 * 1000
-        reward = round(abs(reward), 2)
+        reward += ((progress_to_steps_ratio ** 5) * 2000)
+        reward = round(max(reward, 96000), 2)
         print("2a) reward:", reward)
         ps.iteration += 1
         if ps.avg_steps == -1:

@@ -140,7 +140,7 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    initial_reward = speed * progress_to_steps_ratio * near_center_per / 100
+    initial_reward = near_center_per
     initial_reward = round(initial_reward, 2)
     print("Initial reward:", initial_reward)
 

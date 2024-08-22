@@ -140,11 +140,11 @@ def reward_function(params):
         return float(reward)
 
     print("--------------------")
-    initial_reward = speed * progress_to_steps_ratio
+    initial_reward = (round(near_center_per / 25, 0) ** 4) / 10
     initial_reward = round(initial_reward, 2)
     print("Initial reward:", initial_reward)
 
-    reward = speed * initial_reward
+    reward = initial_reward
 
     # Reward for being on the correct side of the curve or straight path
     # if (curve.is_track_straight and not is_left_of_center) or curve.is_correct_side_of_curve:
@@ -233,7 +233,7 @@ def reward_function(params):
     #     print("5a) reward:", reward)
 
     if progress == 100:
-        reward += progress_to_steps_ratio ** 10 * 20000
+        reward += progress_to_steps_ratio * 20000
         reward = round(abs(reward), 2)
         print("4a) reward:", reward)
         ps.iteration += 1

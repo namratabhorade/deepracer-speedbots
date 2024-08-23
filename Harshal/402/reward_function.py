@@ -129,7 +129,7 @@ def reward_function(params):
     print("[speed, expected_curve_speed]: [", speed, ",", expected_curve_speed, "]")
     print("curve.upcoming_curve_angle + direction_diff_angle:", curve.upcoming_curve_angle + direction_diff_angle)
 
-    if is_reversed or direction_diff_angle > 80 or near_center_per <= 0:
+    if is_reversed or direction_diff_angle > 60 or near_center_per <= 0:
         reward = 1e-5
         print("xxxxxxxxxxxxxxxxxxxx")
         print("Penalize, Reward:", reward)
@@ -146,7 +146,7 @@ def reward_function(params):
     if curve.is_track_straight:
         # Heavily Reward consistent zero steering on straight track
         if steering_angle == ps.steering_angle_1 == ps.steering_angle_2 == 0:
-            reward += (speed ** 2) / 2
+            reward += speed * 2
             reward = round(abs(reward), 2)
             print("1a1) reward:", reward)
         # Reward zero steering on straight track
@@ -161,19 +161,20 @@ def reward_function(params):
             print("1a3) reward:", reward)
     else:
         # Punish higher direction_diff_angle on strong curves
-        if curve.upcoming_curve_angle + direction_diff_angle > 80:
-            reward *= 0.5 * (80 - direction_diff_angle) / 80
+        if curve.upcoming_curve_angle + direction_diff_angle > 60:
+            reward *= 0.5 * (60 - direction_diff_angle) / 60
             reward = round(abs(reward), 2)
             print("1b1) reward:", reward)
+        # Punish higher speed on curves
+        if speed > 2.5:
+            reward = (reward / speed) * (70 - direction_diff_angle) / 70
+            reward = round(abs(reward), 2)
+            print("1b2) reward:", reward)
 
-    if progress < 100:
-        reward += reward * progress / 10
-        reward = round(abs(reward), 2)
-        print("2a) reward:", reward)
-    else:
+    if progress == 100:
         reward += ((progress_to_steps_ratio ** 5) * 2000)
         reward = round(reward, 2)
-        print("2b) reward:", reward)
+        print("2a) reward:", reward)
         ps.iteration += 1
         if ps.avg_steps == -1:
             ps.avg_steps = steps

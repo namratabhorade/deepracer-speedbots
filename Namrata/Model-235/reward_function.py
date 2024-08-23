@@ -194,7 +194,7 @@ def reward_function(params):
         print("6a) reward:", reward)
     # Reward track completion
     elif progress == 100:
-        reward += (progress_to_steps_ratio * 1000)
+        reward += (progress_to_steps_ratio * 100)
         reward = round(reward, 2)
         print("6b) reward:", reward)
 
@@ -211,7 +211,7 @@ def reward_function(params):
 
     # Reward/penalize according to progress to steps ratio
     if progress_to_steps_ratio > 0:
-        reward *= (0.1 + progress_to_steps_ratio ** 15)
+        reward *= (0.1 + progress_to_steps_ratio ** 8)
         reward = round(reward, 2)
         print("8a) reward:", reward)
 
